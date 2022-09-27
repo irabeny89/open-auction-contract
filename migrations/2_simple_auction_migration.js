@@ -1,0 +1,1 @@
+module.exports = async deployer => await deployer.deploy(artifacts.require("SimpleAuction"))
