@@ -4,20 +4,16 @@ pragma solidity >=0.4.22 <0.9.0;
 contract SimpleAuction {
     address payable public beneficiary;
     uint256 public auctionEndTime;
-    // current state of the auction.
     address public highestBidder;
     uint256 public highestBid;
-    // allowed withdrawals of previous bids.
     mapping(address => uint256) pendingReturns;
     // set to true at the end, disallows any change. Default: false.
     bool ended;
-    // events to emit on changes.
+
     event HighestBidIncreased(address bidder, uint256 amount);
     event AuctionEnded(address winner, uint256 amount);
-    // errors in times of failure.
-    // triple slash comments a.k.a natspec comments will be shown when the user is
-    // asked to confirm a transaction or when an error is displayed.
-    /// auction has already ended.
+
+    /// Auction has already ended.
     error AuctionAlreadyEnded();
     /// There is already a higher or equal bid.
     error BidNotHighEnough(uint256 highestBid);
@@ -43,12 +39,12 @@ contract SimpleAuction {
     }
 
     // withdraw a bid that was overbid
+    // prevent re-entrancy attack during withdrawals
     function withdraw() external returns (bool status) {
         uint256 amount = pendingReturns[msg.sender];
         if (amount > 0) {
             pendingReturns[msg.sender] = 0;
-            // explicitly convert using `payable(msg.sender)` in order
-            // to use the member function `send()`
+            // send the amount, if it fails re-assign it back to storage
             if (!payable(msg.sender).send(amount)) {
                 // no need to call throw here, just reset the amount owing
                 pendingReturns[msg.sender] = amount;
